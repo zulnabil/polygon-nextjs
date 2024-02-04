@@ -9,9 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "dotenv": "^16.4.1",
+    "ethers": "^5.0.0",
+    "hardhat": "^2.19.5",
+    "next": "14.1.0",
     "react": "^18",
-    "react-dom": "^18",
-    "next": "14.1.0"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "eslint": "^8",

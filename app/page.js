@@ -1,10 +1,67 @@
+'use client'
+
 import Image from "next/image";
 import styles from "./page.module.css";
+import { ethers } from "ethers"
+import config from '~/app/constants/config.json'
+import HelloWorld from '~/app/constants/abis/HelloWorld.json'
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const [provider, setProvider] = useState(null)
+  const [helloWorld, setHelloWorld] = useState(null)
+
+  const loadBlockchainData = async () => {
+    if (typeof window === "undefined") {
+      return
+    }
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    setProvider(provider)
+
+    const network = await provider.getNetwork()
+
+    const helloWorldAddress = config[network.chainId].helloWorld.address
+
+    const helloWorld = new ethers.Contract(
+      helloWorldAddress,
+      HelloWorld,
+      provider
+    )
+
+    setHelloWorld(helloWorld)
+
+    console.debug("Hello World", helloWorld)
+
+    const appName = await helloWorld.appName()
+    console.debug("appName", appName)
+
+    window.ethereum.on("accountsChanged", async () => {
+      console.debug('changing accounts')
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      })
+      const account = ethers.utils.getAddress(accounts[0])
+      console.debug("Account", account)
+      setAccount(account)
+    })
+  }
+
+  useEffect(() => {
+    loadBlockchainData()
+  }, [])
+
+  async function handleUpdateAppName() {
+    const signer = await provider.getSigner()
+    const newAppName = "New App Name "+ Math.random()
+    const transaction = await helloWorld.connect(signer).updateAppName(newAppName)
+    await transaction.wait()
+    console.debug("New App Name", newAppName)
+  }
+
   return (
     <main className={styles.main}>
       <div className={styles.description}>
+        <button onClick={handleUpdateAppName}>Update app name</button>
         <p>
           Get started by editing&nbsp;
           <code className={styles.code}>src/app/page.js</code>
