@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test-sc": "npx hardhat test --network localhost"
   },
   "dependencies": {
     "dotenv": "^16.4.1",

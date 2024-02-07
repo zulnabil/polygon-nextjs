@@ -4,8 +4,8 @@ pragma solidity >=0.8.2 <0.9.0;
 
 contract LiveQnA {
     uint private nonce = 0;
-    address private owner;
-    uint256 private channelIdCounter = 0;
+    address public owner;
+    uint256 public channelIdCounter = 0;
     uint256 private questionIdCounter = 0;
 
 
@@ -45,6 +45,8 @@ contract LiveQnA {
         _;
     }
 
+    event ChannelCreated(uint256 channelId, string channelName, uint pin);
+
     constructor() {
         owner = msg.sender;
     }
@@ -60,13 +62,13 @@ contract LiveQnA {
         return channels[channelId];
     }
 
-    function createChannel(string memory channelName) public returns (uint256, string memory, uint) {
+    function createChannel(string memory channelName) public {
         uint256 id = channelIdCounter;
         uint pin = getRandomPin();
         channels[id] = Channel(channelName, pin, msg.sender);
         channelIdCounter++;
 
-        return(id, channelName, pin);
+        emit ChannelCreated(id, channelName, pin);
     }
 
     function getQuestionsOfChannel(uint256 channelId, uint256 pin) public view isPinCorrect(channelId, pin) returns (Question[] memory) {
