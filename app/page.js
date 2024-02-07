@@ -1,18 +1,19 @@
-'use client'
+"use client"
 
-import Image from "next/image";
-import styles from "./page.module.css";
+import Image from "next/image"
+import styles from "./page.module.css"
 import { ethers } from "ethers"
-import config from '~/app/constants/config.json'
-import HelloWorld from '~/app/constants/abis/HelloWorld.json'
-import { useEffect, useState } from "react";
+import config from "~/app/constants/config.json"
+import HelloWorld from "~/app/constants/abis/HelloWorld.json"
+import { useEffect, useState } from "react"
 
 export default function Home() {
   const [provider, setProvider] = useState(null)
   const [helloWorld, setHelloWorld] = useState(null)
+  const [account, setAccount] = useState(null)
 
   const loadBlockchainData = async () => {
-    if (typeof window === "undefined") {
+    if (!window || typeof window === "undefined") {
       return
     }
     const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -35,8 +36,14 @@ export default function Home() {
     const appName = await helloWorld.appName()
     console.debug("appName", appName)
 
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    })
+    const account = ethers.utils.getAddress(accounts[0])
+    setAccount(account)
+
     window.ethereum.on("accountsChanged", async () => {
-      console.debug('changing accounts')
+      console.debug("changing accounts")
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       })
@@ -52,8 +59,10 @@ export default function Home() {
 
   async function handleUpdateAppName() {
     const signer = await provider.getSigner()
-    const newAppName = "New App Name "+ Math.random()
-    const transaction = await helloWorld.connect(signer).updateAppName(newAppName)
+    const newAppName = "New App Name " + Math.random()
+    const transaction = await helloWorld
+      .connect(signer)
+      .updateAppName(newAppName)
     await transaction.wait()
     console.debug("New App Name", newAppName)
   }
@@ -148,5 +157,5 @@ export default function Home() {
         </a>
       </div>
     </main>
-  );
+  )
 }
