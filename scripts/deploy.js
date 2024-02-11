@@ -1,9 +1,10 @@
 async function main() {
-    const HelloWorld = await ethers.getContractFactory("HelloWorld");
+    const LiveQnA = await ethers.getContractFactory("LiveQnA");
  
     // Start deployment, returning a promise that resolves to a contract object
-    const helloWorld = await HelloWorld.deploy("Hello World!");
-    console.log("Contract deployed to address:", helloWorld.address);
+    const liveQnA = await LiveQnA.deploy();
+    await liveQnA.deployed();
+    console.log("Contract deployed to address:", liveQnA.address);
  }
  
  main()

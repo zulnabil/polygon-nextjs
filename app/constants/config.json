@@ -1,7 +1,7 @@
 {
-    "80001": {
-      "helloWorld": {
-        "address": "0x7f0aD0936bb528B7bE0ba7C595Ae048A87177344"
+    "31337": {
+      "liveQnA": {
+        "address": "0x9A676e781A523b5d0C0e43731313A708CB607508"
       }
     }
   }

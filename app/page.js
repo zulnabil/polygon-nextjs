@@ -4,12 +4,12 @@ import Image from "next/image"
 import styles from "./page.module.css"
 import { ethers } from "ethers"
 import config from "~/app/constants/config.json"
-import HelloWorld from "~/app/constants/abis/HelloWorld.json"
+import LiveQnA from "~/app/constants/abis/LiveQnA.json"
 import { useEffect, useState } from "react"
 
 export default function Home() {
   const [provider, setProvider] = useState(null)
-  const [helloWorld, setHelloWorld] = useState(null)
+  const [smartContract, setSmartContract] = useState(null)
   const [account, setAccount] = useState(null)
 
   const loadBlockchainData = async () => {
@@ -21,20 +21,20 @@ export default function Home() {
 
     const network = await provider.getNetwork()
 
-    const helloWorldAddress = config[network.chainId].helloWorld.address
+    const liveQnAAddress = config[network.chainId].liveQnA.address
 
-    const helloWorld = new ethers.Contract(
-      helloWorldAddress,
-      HelloWorld,
+    const liveQnA = new ethers.Contract(
+      liveQnAAddress,
+      LiveQnA,
       provider
     )
 
-    setHelloWorld(helloWorld)
+    setSmartContract(liveQnA)
 
-    console.debug("Hello World", helloWorld)
+    console.debug("Smart Contract", liveQnA)
 
-    const appName = await helloWorld.appName()
-    console.debug("appName", appName)
+    // const appName = await helloWorld.appName()
+    // console.debug("appName", appName)
 
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
@@ -57,20 +57,20 @@ export default function Home() {
     loadBlockchainData()
   }, [])
 
-  async function handleUpdateAppName() {
-    const signer = await provider.getSigner()
-    const newAppName = "New App Name " + Math.random()
-    const transaction = await helloWorld
-      .connect(signer)
-      .updateAppName(newAppName)
-    await transaction.wait()
-    console.debug("New App Name", newAppName)
-  }
+  // async function handleUpdateAppName() {
+  //   const signer = await provider.getSigner()
+  //   const newAppName = "New App Name " + Math.random()
+  //   const transaction = await helloWorld
+  //     .connect(signer)
+  //     .updateAppName(newAppName)
+  //   await transaction.wait()
+  //   console.debug("New App Name", newAppName)
+  // }
 
   return (
     <main className={styles.main}>
       <div className={styles.description}>
-        <button onClick={handleUpdateAppName}>Update app name</button>
+        {/* <button onClick={handleUpdateAppName}>Update app name</button> */}
         <p>
           Get started by editing&nbsp;
           <code className={styles.code}>src/app/page.js</code>

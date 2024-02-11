@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test-sc": "npx hardhat test --network localhost"
+    "develop": "npx hardhat node --network hardhat",
+    "test": "npx hardhat test --network localhost",
+    "deploy": "npx hardhat run scripts/deploy.js --network localhost"
   },
   "dependencies": {
     "dotenv": "^16.4.1",
