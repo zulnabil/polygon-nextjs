@@ -20,11 +20,13 @@ import {
   ActionIcon,
   Transition,
   Space,
+  useMantineTheme,
 } from "@mantine/core";
 import { IconCaretUp } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
 
 export default function Channel({ id, pin }) {
+  const theme = useMantineTheme();
   const { scrollIntoView, targetRef } = useScrollIntoView({
     offset: 60,
     duration: 200,
@@ -134,7 +136,7 @@ export default function Channel({ id, pin }) {
 
   return (
     <>
-      <Box bg="blue" p="lg">
+      <Box bg={theme.primaryColor} p="lg">
         <Container p="md">
           <Title order={3} c="white" mb="lg">
             {`"${channelName}" channel`}

@@ -12,14 +12,13 @@ import {
   Text,
   Transition,
 } from "@mantine/core";
-import { IconPhoto, IconDownload, IconArrowRight } from "@tabler/icons-react";
+import { IconArrowRight } from "@tabler/icons-react";
 import { ethers } from "ethers";
 import config from "~/app/constants/config.json";
 import LiveQnA from "~/app/constants/abis/LiveQnA.json";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import CopyText from "../components/CopyText";
-import { usePathname, useRouter } from "next/navigation";
 
 export default function Landing() {
   const [provider, setProvider] = useState(null);
