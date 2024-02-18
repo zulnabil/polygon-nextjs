@@ -18,12 +18,13 @@ import {
   Button,
   Group,
   ActionIcon,
-  Transition,
   Space,
   useMantineTheme,
+  Mark,
 } from "@mantine/core";
 import { IconCaretUp } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 export default function Channel({ id, pin }) {
   const theme = useMantineTheme();
@@ -35,7 +36,7 @@ export default function Channel({ id, pin }) {
   const [smartContract, setSmartContract] = useState(null);
   const [channelName, setChannelName] = useState("");
   const [account, setAccount] = useState(null);
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState("");
 
@@ -77,7 +78,6 @@ export default function Channel({ id, pin }) {
   async function getListQuestions(smartContract) {
     try {
       const questions = await smartContract.getQuestionsOfChannel(id, pin);
-      console.debug("questions", questions);
       setQuestions(questions);
     } catch (error) {
       console.error("getListQuestions", error);
@@ -136,10 +136,14 @@ export default function Channel({ id, pin }) {
 
   return (
     <>
+      <LoadingOverlay visible={questions === null} />
       <Box bg={theme.primaryColor} p="lg">
         <Container p="md">
           <Title order={3} c="white" mb="lg">
-            {`"${channelName}" channel`}
+            <Mark bg="teal" px="5">
+              {channelName}
+            </Mark>{" "}
+            channel
           </Title>
           <form onSubmit={handleAddQuestion}>
             <Stack>
@@ -169,13 +173,13 @@ export default function Channel({ id, pin }) {
         </Container>
       </Box>
       <Container mt="lg">
-        {!questions.length && (
+        {!questions?.length && (
           <Center p="lg">
             <Title order={2}>No questions yet</Title>
           </Center>
         )}
         <Stack pb="lg">
-          {questions.map((question, index) => {
+          {questions?.map((question, index) => {
             const isLast = questions[questions.length - 1].id === question.id;
             return (
               <Card
