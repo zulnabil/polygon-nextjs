@@ -4,6 +4,11 @@
   animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
+.card-vibrate {
+  animation-duration: 0.5s;
+  animation-name: vibrate;
+}
+
 @keyframes slidein {
   from {
     opacity: 0;
@@ -13,5 +18,23 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes vibrate {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(5px);
+  }
+  40% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
   }
 }

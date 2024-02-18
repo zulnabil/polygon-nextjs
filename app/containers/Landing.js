@@ -11,6 +11,10 @@ import {
   Notification,
   Text,
   Transition,
+  Group,
+  Box,
+  Mark,
+  em,
 } from "@mantine/core";
 import { IconArrowRight } from "@tabler/icons-react";
 import { ethers } from "ethers";
@@ -19,6 +23,8 @@ import LiveQnA from "~/app/constants/abis/LiveQnA.json";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import CopyText from "../components/CopyText";
+import AnimationPlayer from "../components/AnimationPlayer";
+import { useMediaQuery } from "@mantine/hooks";
 
 export default function Landing() {
   const [provider, setProvider] = useState(null);
@@ -70,13 +76,13 @@ export default function Landing() {
 
   async function createChannel(event) {
     event.preventDefault();
+    setIsError(false);
     setIsLoading(true);
     const signer = provider.getSigner();
     const input = event.target[0].value;
     try {
       const tx = await smartContract.connect(signer).createChannel(input);
       const receipt = await tx.wait();
-      console.debug("receipt", receipt);
       const event = receipt.events[0];
       const eventData = event.args;
       const channelId = eventData?.channelId;
@@ -104,7 +110,9 @@ export default function Landing() {
   return (
     <Container size="sm">
       <Flex justify="center" p="xl" mb="lg">
-        <Title order={1}>Live QnA Blockchain</Title>
+        <Title fw="600" ta="center" order={1}>
+          Live QnA Blockchain
+        </Title>
       </Flex>
       <Stack
         align="center"
@@ -141,15 +149,20 @@ export default function Landing() {
           radius="md"
           w="100%"
           style={{
+            borderColor: isError ? "red" : "gray.100",
             borderStyle: "dashed",
           }}
+          className={isError ? "card-vibrate" : ""}
         >
           <form onSubmit={createChannel}>
+            <Text fw="500" mb="xs">
+              Create your own Channel
+            </Text>
             <Flex gap="md">
               <TextInput
                 placeholder="My Town Hall QnA"
                 radius="md"
-                flex="1"
+                flex="100%"
                 size="lg"
                 onChange={(event) => {
                   setInput(event.target.value);
@@ -158,13 +171,14 @@ export default function Landing() {
               />
               <Button
                 size="lg"
+                px="xs"
                 radius="md"
-                flex="1"
+                flex="100%"
                 type="submit"
                 loading={isLoading}
                 disabled={!input}
               >
-                Create my own channel
+                Create channel
               </Button>
             </Flex>
           </form>
@@ -175,40 +189,49 @@ export default function Landing() {
 }
 
 function Notif({ channel }) {
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`);
   const channelLink = `${window.location.host}/channel/${channel.id}?pin=${channel.pin}`;
   const channelPath = channelLink.replace(window.location.host, "");
   return (
     <Notification
-      color="lime"
+      color="teal"
       radius="md"
-      title="Channel succeed created"
       w="100%"
       withCloseButton={false}
       withBorder
     >
-      <Text>
-        Channel <b>{`"${channel.name}"`}</b> has been created successfully.
-      </Text>
-      <Text mb="sm">
-        This is your channel link, share it with your audience:
-      </Text>
-      <Flex align="center" mb="sm" gap="xs">
-        <Link href={channelPath}>
-          <Text c="blue" td="underline">
-            {channelLink}
+      <Group justify={isMobile ? "center" : "flex-start"}>
+        <AnimationPlayer src="/animations/success.json" />
+        <Box c="gray.7">
+          <Text fw="bold">
+            Channel{" "}
+            <Mark bg="teal" c="white" px="3">
+              {channel.name}
+            </Mark>{" "}
+            has been created successfully.
           </Text>
-        </Link>
-        <CopyText value={channelLink} />
-      </Flex>
-      <Link href={channelPath}>
-        <Button
-          rightSection={<IconArrowRight size={14} />}
-          variant="light"
-          color="blue"
-        >
-          Go to Channel
-        </Button>
-      </Link>
+          <Text mb="sm">
+            This is your channel link, share it with your audience:
+          </Text>
+          <Flex align="center" mb="sm" gap="xs">
+            <Link href={channelPath}>
+              <Text c="blue" td="underline">
+                {channelLink}
+              </Text>
+            </Link>
+            <CopyText value={channelLink} />
+          </Flex>
+          <Link href={channelPath}>
+            <Button
+              rightSection={<IconArrowRight size={14} />}
+              variant="light"
+              color="blue"
+            >
+              Go to Channel
+            </Button>
+          </Link>
+        </Box>
+      </Group>
     </Notification>
   );
 }
