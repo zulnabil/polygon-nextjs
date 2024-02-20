@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import config from "~/app/constants/config.json";
-import LiveQnA from "~/app/constants/abis/LiveQnA.json";
-import { ethers } from "ethers";
+import { useCallback, useEffect, useState } from "react"
+import config from "~/app/constants/config.json"
+import LiveQnA from "~/app/constants/abis/LiveQnA.json"
+import { ethers } from "ethers"
 import {
   Container,
   Text,
@@ -21,106 +21,120 @@ import {
   Space,
   useMantineTheme,
   Mark,
-} from "@mantine/core";
-import { IconCaretUp } from "@tabler/icons-react";
-import { useScrollIntoView } from "@mantine/hooks";
-import LoadingOverlay from "../components/LoadingOverlay";
+} from "@mantine/core"
+import { IconCaretUp } from "@tabler/icons-react"
+import { useScrollIntoView } from "@mantine/hooks"
+import LoadingOverlay from "../components/LoadingOverlay"
+import classes from "./Channel.module.css"
 
 export default function Channel({ id, pin }) {
-  const theme = useMantineTheme();
+  const theme = useMantineTheme()
   const { scrollIntoView, targetRef } = useScrollIntoView({
     offset: 60,
     duration: 200,
-  });
-  const [provider, setProvider] = useState(null);
-  const [smartContract, setSmartContract] = useState(null);
-  const [channelName, setChannelName] = useState("");
-  const [account, setAccount] = useState(null);
-  const [questions, setQuestions] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [input, setInput] = useState("");
+  })
+  const [provider, setProvider] = useState(null)
+  const [smartContract, setSmartContract] = useState(null)
+  const [channelName, setChannelName] = useState("")
+  const [account, setAccount] = useState(null)
+  const [questions, setQuestions] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [input, setInput] = useState("")
 
-  const loadBlockchainData = async () => {
-    if (!window || typeof window === "undefined") {
-      return;
-    }
-
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    setProvider(provider);
-
-    const network = await provider.getNetwork();
-
-    const liveQnAAddress = config[network.chainId].liveQnA.address;
-    const liveQnA = new ethers.Contract(liveQnAAddress, LiveQnA, provider);
-
-    setSmartContract(liveQnA);
-
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    const account = ethers.utils.getAddress(accounts[0]);
-    setAccount(account);
-
-    const channel = await liveQnA.getChannel(id);
-    setChannelName(channel.name);
-
-    await getListQuestions(liveQnA);
-
-    window.ethereum.on("accountsChanged", async () => {
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      const account = ethers.utils.getAddress(accounts[0]);
-      setAccount(account);
-    });
-  };
-
-  async function getListQuestions(smartContract) {
-    try {
-      const questions = await smartContract.getQuestionsOfChannel(id, pin);
-      setQuestions(questions);
-    } catch (error) {
-      console.error("getListQuestions", error);
-    }
-  }
+  const getListQuestions = useCallback(
+    async (smartContract, initialAccount) => {
+      const signer = initialAccount || account
+      try {
+        const questions = await smartContract
+          .connect(signer)
+          .getQuestionsOfChannel(id, pin)
+        setQuestions(questions)
+      } catch (error) {
+        console.error("getListQuestions", error)
+      }
+    },
+    [account, id, pin]
+  )
 
   useEffect(() => {
-    loadBlockchainData();
-  }, []);
+    const loadBlockchainData = async () => {
+      if (!window || typeof window === "undefined") {
+        return
+      }
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      setProvider(provider)
+
+      const network = await provider.getNetwork()
+
+      const liveQnAAddress = config[network.chainId].liveQnA.address
+      const liveQnA = new ethers.Contract(liveQnAAddress, LiveQnA, provider)
+
+      setSmartContract(liveQnA)
+
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      })
+      const account = ethers.utils.getAddress(accounts[0])
+      setAccount(account)
+
+      const channel = await liveQnA.getChannel(id)
+      setChannelName(channel.name)
+
+      await getListQuestions(liveQnA, account)
+
+      window.ethereum.on("accountsChanged", async () => {
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        })
+        const account = ethers.utils.getAddress(accounts[0])
+        setAccount(account)
+      })
+    }
+
+    loadBlockchainData()
+  }, [
+    id,
+    setProvider,
+    setSmartContract,
+    setAccount,
+    setChannelName,
+    getListQuestions,
+  ])
 
   async function handleAddQuestion(event) {
-    event.preventDefault();
-    const signer = provider.getSigner();
-    const input = event.target[0].value;
-    const author = event.target[1].value || "Anonymous";
+    event.preventDefault()
+    const signer = provider.getSigner()
+    const input = event.target[0].value
+    const author = event.target[1].value || "Anonymous"
     try {
-      setIsLoading(true);
+      setIsLoading(true)
       const tx = await smartContract
         .connect(signer)
-        .addQuestionToChannel(id, pin, input, author);
-      await tx.wait();
-      await getListQuestions(smartContract);
-      setInput("");
+        .addQuestionToChannel(id, pin, input, author)
+      await tx.wait()
+      await getListQuestions(smartContract)
+      setInput("")
     } catch (error) {
-      console.error("handleAddQuestion", error);
+      console.error("handleAddQuestion", error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
       scrollIntoView({
         alignment: "center",
-      });
+      })
     }
   }
 
   async function handleVote(questionId) {
-    const signer = provider.getSigner();
+    const signer = provider.getSigner()
     try {
       const tx = await smartContract
         .connect(signer)
-        .voteQuestionOfChannel(id, pin, questionId);
-      await tx.wait();
-      await getListQuestions(smartContract);
+        .voteQuestionOfChannel(id, pin, questionId)
+      await tx.wait()
+      await getListQuestions(smartContract)
     } catch (error) {
-      console.error("handleVote", error);
+      console.error("handleVote", error)
     }
   }
 
@@ -131,7 +145,7 @@ export default function Channel({ id, pin }) {
           <Title order={2}>Invalid channel</Title>
         </Center>
       </Container>
-    );
+    )
   }
 
   return (
@@ -180,7 +194,8 @@ export default function Channel({ id, pin }) {
         )}
         <Stack pb="lg">
           {questions?.map((question, index) => {
-            const isLast = questions[questions.length - 1].id === question.id;
+            const isVoted = question.isVoted
+            const isLast = questions[questions.length - 1].id === question.id
             return (
               <Card
                 key={index}
@@ -192,10 +207,14 @@ export default function Channel({ id, pin }) {
                   <Flex direction="column" align="center">
                     <ActionIcon
                       variant="subtle"
-                      aria-label="Settings"
+                      disabled={isVoted}
+                      className={classes.vote}
                       onClick={() => handleVote(question.id)}
                     >
-                      <IconCaretUp stroke={1.5} />
+                      <IconCaretUp
+                        fill={isVoted ? "true" : "none"}
+                        stroke={1.5}
+                      />
                     </ActionIcon>
                     <Text fw={500}>{question.votes.toNumber()}</Text>
                   </Flex>
@@ -205,11 +224,11 @@ export default function Channel({ id, pin }) {
                   </Box>
                 </Group>
               </Card>
-            );
+            )
           })}
         </Stack>
         <Space ref={targetRef} />
       </Container>
     </>
-  );
+  )
 }

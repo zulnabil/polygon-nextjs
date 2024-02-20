@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   Container,
@@ -15,95 +15,95 @@ import {
   Box,
   Mark,
   em,
-} from "@mantine/core";
-import { IconArrowRight } from "@tabler/icons-react";
-import { ethers } from "ethers";
-import config from "~/app/constants/config.json";
-import LiveQnA from "~/app/constants/abis/LiveQnA.json";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import CopyText from "../components/CopyText";
-import AnimationPlayer from "../components/AnimationPlayer";
-import { useMediaQuery } from "@mantine/hooks";
+} from "@mantine/core"
+import { IconArrowRight } from "@tabler/icons-react"
+import { ethers } from "ethers"
+import config from "~/app/constants/config.json"
+import LiveQnA from "~/app/constants/abis/LiveQnA.json"
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import CopyText from "../components/CopyText"
+import AnimationPlayer from "../components/AnimationPlayer"
+import { useMediaQuery } from "@mantine/hooks"
 
 export default function Landing() {
-  const [provider, setProvider] = useState(null);
-  const [smartContract, setSmartContract] = useState(null);
-  const [account, setAccount] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [input, setInput] = useState("");
-  const [isError, setIsError] = useState(false);
-  const [error, setError] = useState(null);
+  const [provider, setProvider] = useState(null)
+  const [smartContract, setSmartContract] = useState(null)
+  const [account, setAccount] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [input, setInput] = useState("")
+  const [isError, setIsError] = useState(false)
+  const [error, setError] = useState(null)
   const [channel, setChannel] = useState({
     id: null,
     name: null,
     pin: null,
-  });
+  })
 
   const loadBlockchainData = async () => {
     if (!window || typeof window === "undefined") {
-      return;
+      return
     }
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    setProvider(provider);
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    setProvider(provider)
 
-    const network = await provider.getNetwork();
+    const network = await provider.getNetwork()
 
-    const liveQnAAddress = config[network.chainId].liveQnA.address;
+    const liveQnAAddress = config[network.chainId].liveQnA.address
 
-    const liveQnA = new ethers.Contract(liveQnAAddress, LiveQnA, provider);
-
-    setSmartContract(liveQnA);
+    const liveQnA = new ethers.Contract(liveQnAAddress, LiveQnA, provider)
+    console.debug("LiveQnA Contract: ", liveQnA)
+    setSmartContract(liveQnA)
 
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
-    });
-    const account = ethers.utils.getAddress(accounts[0]);
-    setAccount(account);
+    })
+    const account = ethers.utils.getAddress(accounts[0])
+    setAccount(account)
 
     window.ethereum.on("accountsChanged", async () => {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
-      });
-      const account = ethers.utils.getAddress(accounts[0]);
-      setAccount(account);
-    });
-  };
+      })
+      const account = ethers.utils.getAddress(accounts[0])
+      setAccount(account)
+    })
+  }
 
   useEffect(() => {
-    loadBlockchainData();
-  }, []);
+    loadBlockchainData()
+  }, [])
 
   async function createChannel(event) {
-    event.preventDefault();
-    setIsError(false);
-    setIsLoading(true);
-    const signer = provider.getSigner();
-    const input = event.target[0].value;
+    event.preventDefault()
+    setIsError(false)
+    setIsLoading(true)
+    const signer = provider.getSigner()
+    const input = event.target[0].value
     try {
-      const tx = await smartContract.connect(signer).createChannel(input);
-      const receipt = await tx.wait();
-      const event = receipt.events[0];
-      const eventData = event.args;
-      const channelId = eventData?.channelId;
-      const channelName = eventData?.channelName;
-      const pin = eventData?.pin?.toNumber();
+      const tx = await smartContract.connect(signer).createChannel(input)
+      const receipt = await tx.wait()
+      const event = receipt.events[0]
+      const eventData = event.args
+      const channelId = eventData?.channelId
+      const channelName = eventData?.channelName
+      const pin = eventData?.pin?.toNumber()
       if (channelName) {
         setChannel({
           id: channelId,
           name: channelName,
           pin: pin,
-        });
-        console.debug("Channel Created: ", channelName);
+        })
+        console.debug("Channel Created: ", channelName)
       }
-      setInput("");
-      setIsLoading(false);
+      setInput("")
+      setIsLoading(false)
     } catch (error) {
-      console.debug("Error", error);
-      setIsLoading(false);
+      console.debug("Error", error)
+      setIsLoading(false)
       if (error.message) {
-        setIsError(true);
-        setError(error.message);
+        setIsError(true)
+        setError(error.message)
       }
     }
   }
@@ -165,7 +165,7 @@ export default function Landing() {
                 flex="100%"
                 size="lg"
                 onChange={(event) => {
-                  setInput(event.target.value);
+                  setInput(event.target.value)
                 }}
                 value={input}
               />
@@ -185,13 +185,13 @@ export default function Landing() {
         </Card>
       </Stack>
     </Container>
-  );
+  )
 }
 
 function Notif({ channel }) {
-  const isMobile = useMediaQuery(`(max-width: ${em(750)})`);
-  const channelLink = `${window.location.host}/channel/${channel.id}?pin=${channel.pin}`;
-  const channelPath = channelLink.replace(window.location.host, "");
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
+  const channelLink = `${window.location.host}/channel/${channel.id}?pin=${channel.pin}`
+  const channelPath = channelLink.replace(window.location.host, "")
   return (
     <Notification
       color="teal"
@@ -233,7 +233,7 @@ function Notif({ channel }) {
         </Box>
       </Group>
     </Notification>
-  );
+  )
 }
 
 function ErrorNotif({ message, onClose }) {
@@ -248,5 +248,5 @@ function ErrorNotif({ message, onClose }) {
     >
       <Text>{message}</Text>
     </Notification>
-  );
+  )
 }
