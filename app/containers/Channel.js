@@ -36,7 +36,7 @@ export default function Channel({ id, pin }) {
     duration: 200,
   })
   const [channelName, setChannelName] = useState("No")
-  const [questions, setQuestions] = useState([])
+  const [questions, setQuestions] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [input, setInput] = useState("")
 
@@ -132,7 +132,7 @@ export default function Channel({ id, pin }) {
     )
   }
 
-  const shouldShowLoading = !questions.length
+  const shouldShowLoading = questions === null
 
   return (
     <>

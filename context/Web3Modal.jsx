@@ -1,18 +1,23 @@
 "use client"
 
 import { createWeb3Modal, defaultConfig } from "@web3modal/ethers5/react"
-import config from "~/app/constants/config.json"
-
-// 1. Get projectId
-const projectId = process.env.NEXT_PUBLIC_WEB3MODAL_PROJECT_ID
+import {
+  CONTRACT_ADDRESS,
+  NETWORK_CHAIN_ID,
+  NETWORK_CURRENCY,
+  NETWORK_EXPLORER,
+  NETWORK_NAME,
+  NETWORK_RPC_URL,
+  WEB3MODAL_PROJECT_ID,
+} from "~/app/constants/config"
 
 // 2. Set chains
 const mainnet = {
-  chainId: 31337,
-  name: "Hardhat",
-  currency: "ETH",
-  explorerUrl: "https://etherscan.io",
-  rpcUrl: "http://127.0.0.1:8545",
+  chainId: NETWORK_CHAIN_ID || 31337,
+  name: NETWORK_NAME || "Hardhat",
+  currency: NETWORK_CURRENCY || "ETH",
+  explorerUrl: NETWORK_EXPLORER || "https://etherscan.io",
+  rpcUrl: NETWORK_RPC_URL || "http://127.0.0.1:8545",
 }
 
 // 3. Create modal
@@ -26,11 +31,11 @@ const metadata = {
 createWeb3Modal({
   ethersConfig: defaultConfig({ metadata }),
   chains: [mainnet],
-  projectId,
+  projectId: WEB3MODAL_PROJECT_ID,
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
   tokens: {
-    31337: {
-      address: config[31337].liveQnA.address,
+    [NETWORK_CHAIN_ID]: {
+      address: CONTRACT_ADDRESS,
     },
   },
 })
