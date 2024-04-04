@@ -1,4 +1,4 @@
-import { LoadingOverlay as MantineLoadingOverlay } from "@mantine/core";
+import { LoadingOverlay as MantineLoadingOverlay } from "@mantine/core"
 
 export default function LoadingOverlay({ visible }) {
   return (
@@ -9,9 +9,9 @@ export default function LoadingOverlay({ visible }) {
         timingFunction: "ease",
         transition: "fade",
       }}
-      zIndex={1000}
+      zIndex={100}
       overlayProps={{ blur: 5 }}
       loaderProps={{ color: "teal", type: "bars" }}
     />
-  );
+  )
 }

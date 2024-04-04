@@ -49,6 +49,9 @@ contract LiveQnA {
     }
 
     event ChannelCreated(uint256 channelId, string channelName, uint pin);
+    event QuestionAdded(Question question);
+    event QuestionVoted(uint256 channelId, uint256 questionId, uint256 votes);
+    event QuestionUnvoted(uint256 channelId, uint256 questionId, uint256 votes);
 
     constructor() {
         owner = msg.sender;
@@ -65,7 +68,7 @@ contract LiveQnA {
 
     function getChannel(
         uint256 channelId
-    ) public view isOwner returns (Channel memory) {
+    ) public view returns (Channel memory) {
         return channels[channelId];
     }
 
@@ -111,6 +114,7 @@ contract LiveQnA {
         string memory text,
         string memory author
     ) public isPinCorrect(channelId, pin) {
+        // Add the question to the channel
         uint256 questionId = questionIdCounter;
         questions[questionIdCounter] = Question(
             questionId,
@@ -120,9 +124,16 @@ contract LiveQnA {
             0,
             false
         );
+
+        // Increment the question id counter and the total questions for the channel
         questionIdCounter++;
         totalQuestionsPerChannel[channelId]++;
+
+        // Add the question id to the list of question ids sorted by votes
         sortedQuestionIdsByVotes[channelId].push(questionId);
+
+        // Emit the event
+        emit QuestionAdded(questions[questionId]);
     }
 
     function voteQuestionOfChannel(
@@ -146,10 +157,58 @@ contract LiveQnA {
 
         // Add the question id to the user's list of votes
         userVotes[msg.sender].push(questionId);
+
+        // Emit the event
+        emit QuestionVoted(channelId, questionId, questions[questionId].votes);
     }
 
-    // Function to sort the list of question ids based on votes
+    function UnvoteQuestionOfChannel(
+        uint256 channelId,
+        uint256 pin,
+        uint256 questionId
+    ) public isPinCorrect(channelId, pin) {
+        // Check if the user has already voted for the question
+        uint256[] memory userVotesList = userVotes[msg.sender];
+        bool isVoted = false;
+        for (uint256 i = 0; i < userVotesList.length; i++) {
+            if (userVotesList[i] == questionId) {
+                isVoted = true;
+                break;
+            }
+        }
+
+        if (!isVoted) {
+            revert("You have not voted for this question");
+        }
+
+        // Decrease the votes of the question
+        questions[questionId].votes--;
+
+        // Sort the list of question ids based on votes
+        sortQuestionIdsByVotes(channelId);
+
+        // Remove the question id from the user's list of votes
+        uint256[] storage userVotesListStorage = userVotes[msg.sender];
+        for (uint256 i = 0; i < userVotesListStorage.length; i++) {
+            if (userVotesListStorage[i] == questionId) {
+                userVotesListStorage[i] = userVotesListStorage[
+                    userVotesListStorage.length - 1
+                ];
+                userVotesListStorage.pop();
+                break;
+            }
+        }
+
+        // Emit the event
+        emit QuestionUnvoted(
+            channelId,
+            questionId,
+            questions[questionId].votes
+        );
+    }
+
     function sortQuestionIdsByVotes(uint256 channelId) private {
+        // Bubble sort the list of question ids based on votes
         uint256[] storage questionIds = sortedQuestionIdsByVotes[channelId];
         uint256 length = questionIds.length;
         for (uint256 i = 0; i < length; i++) {

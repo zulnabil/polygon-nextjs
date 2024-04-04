@@ -16,20 +16,22 @@ import {
   Mark,
   em,
 } from "@mantine/core"
+import {
+  useWeb3ModalProvider,
+  useWeb3ModalAccount,
+} from "@web3modal/ethers5/react"
 import { IconArrowRight } from "@tabler/icons-react"
-import { ethers } from "ethers"
-import config from "~/app/constants/config.json"
-import LiveQnA from "~/app/constants/abis/LiveQnA.json"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import CopyText from "../components/CopyText"
 import AnimationPlayer from "../components/AnimationPlayer"
 import { useMediaQuery } from "@mantine/hooks"
+import ConnectButton from "~/app/components/ConnectButton"
+import { ContractHelper } from "~/app/libs/contract"
 
 export default function Landing() {
-  const [provider, setProvider] = useState(null)
-  const [smartContract, setSmartContract] = useState(null)
-  const [account, setAccount] = useState(null)
+  const { isConnected } = useWeb3ModalAccount()
+  const { walletProvider } = useWeb3ModalProvider()
   const [isLoading, setIsLoading] = useState(false)
   const [input, setInput] = useState("")
   const [isError, setIsError] = useState(false)
@@ -40,48 +42,15 @@ export default function Landing() {
     pin: null,
   })
 
-  const loadBlockchainData = async () => {
-    if (!window || typeof window === "undefined") {
-      return
-    }
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    setProvider(provider)
-
-    const network = await provider.getNetwork()
-
-    const liveQnAAddress = config[network.chainId].liveQnA.address
-
-    const liveQnA = new ethers.Contract(liveQnAAddress, LiveQnA, provider)
-    console.debug("LiveQnA Contract: ", liveQnA)
-    setSmartContract(liveQnA)
-
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    })
-    const account = ethers.utils.getAddress(accounts[0])
-    setAccount(account)
-
-    window.ethereum.on("accountsChanged", async () => {
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })
-      const account = ethers.utils.getAddress(accounts[0])
-      setAccount(account)
-    })
-  }
-
-  useEffect(() => {
-    loadBlockchainData()
-  }, [])
-
   async function createChannel(event) {
     event.preventDefault()
     setIsError(false)
     setIsLoading(true)
-    const signer = provider.getSigner()
+    const liveQnA = await ContractHelper.getContract(walletProvider)
+    const signer = await ContractHelper.getSigner(walletProvider)
     const input = event.target[0].value
     try {
-      const tx = await smartContract.connect(signer).createChannel(input)
+      const tx = await liveQnA.connect(signer).createChannel(input)
       const receipt = await tx.wait()
       const event = receipt.events[0]
       const eventData = event.args
@@ -107,9 +76,11 @@ export default function Landing() {
       }
     }
   }
+
   return (
-    <Container size="sm">
-      <Flex justify="center" p="xl" mb="lg">
+    <Container pos="relative">
+      <ConnectButton />
+      <Flex justify="center" pt="5rem" pb="xl" mb="lg">
         <Title fw="600" ta="center" order={1}>
           Live QnA Blockchain
         </Title>
@@ -168,6 +139,7 @@ export default function Landing() {
                   setInput(event.target.value)
                 }}
                 value={input}
+                disabled={!isConnected}
               />
               <Button
                 size="lg"

@@ -37,8 +37,8 @@
       ]
     },
     "C:\\Users\\Zulnabil\\dev\\blockchain\\polygon-nextjs\\contracts\\LiveQnA.sol": {
-      "lastModificationDate": 1708450497868,
-      "contentHash": "ee39cfa532d7a4bcc54f287fb3cb5163",
+      "lastModificationDate": 1712245354916,
+      "contentHash": "119a314a1520333fde27ff75ab635c24",
       "sourceName": "contracts/LiveQnA.sol",
       "solcConfig": {
         "version": "0.8.9",

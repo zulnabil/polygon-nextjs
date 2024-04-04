@@ -1,12 +1,13 @@
-"use client";
+"use client"
 
-import { MantineProvider } from "@mantine/core";
-import { useSearchParams } from "next/navigation";
+import { MantineProvider } from "@mantine/core"
+import { useSearchParams } from "next/navigation"
+import { Web3ModalProvider } from "~/context/Web3Modal"
 
 export default function Provider({ children }) {
-  const searchParams = useSearchParams();
-  const color = searchParams.get("color");
-  const primaryColor = colors.includes(color) ? color : "dark";
+  const searchParams = useSearchParams()
+  const color = searchParams.get("color")
+  const primaryColor = colors.includes(color) ? color : "dark"
 
   return (
     <MantineProvider
@@ -15,9 +16,9 @@ export default function Provider({ children }) {
         primaryColor,
       }}
     >
-      {children}
+      <Web3ModalProvider>{children}</Web3ModalProvider>
     </MantineProvider>
-  );
+  )
 }
 
 const colors = [
@@ -35,4 +36,4 @@ const colors = [
   "lime",
   "yellow",
   "orange",
-];
+]

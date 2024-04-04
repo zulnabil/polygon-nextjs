@@ -1,13 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import config from "~/app/constants/config.json"
-import LiveQnA from "~/app/constants/abis/LiveQnA.json"
-import { ethers } from "ethers"
+import {
+  useWeb3ModalProvider,
+  useWeb3ModalAccount,
+  useWeb3Modal,
+} from "@web3modal/ethers5/react"
 import {
   Container,
-  Text,
-  Card,
   Title,
   Center,
   Textarea,
@@ -16,104 +16,87 @@ import {
   Stack,
   Box,
   Button,
-  Group,
-  ActionIcon,
   Space,
   useMantineTheme,
   Mark,
 } from "@mantine/core"
-import { IconCaretUp } from "@tabler/icons-react"
 import { useScrollIntoView } from "@mantine/hooks"
 import LoadingOverlay from "../components/LoadingOverlay"
-import classes from "./Channel.module.css"
+import { ContractHelper } from "~/app/libs/contract"
+import ConnectButton from "~/app/components/ConnectButton"
+import CardQuestion from "~/app/components/CardQuestion"
 
 export default function Channel({ id, pin }) {
   const theme = useMantineTheme()
+  const { walletProvider } = useWeb3ModalProvider()
+  const { address, isConnected } = useWeb3ModalAccount()
+  const { open } = useWeb3Modal()
   const { scrollIntoView, targetRef } = useScrollIntoView({
     offset: 60,
     duration: 200,
   })
-  const [provider, setProvider] = useState(null)
-  const [smartContract, setSmartContract] = useState(null)
-  const [channelName, setChannelName] = useState("")
-  const [account, setAccount] = useState(null)
-  const [questions, setQuestions] = useState(null)
+  const [channelName, setChannelName] = useState("No")
+  const [questions, setQuestions] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [input, setInput] = useState("")
 
   const getListQuestions = useCallback(
     async (smartContract, initialAccount) => {
-      const signer = initialAccount || account
+      const signer = initialAccount || address
       try {
         const questions = await smartContract
           .connect(signer)
           .getQuestionsOfChannel(id, pin)
+
         setQuestions(questions)
       } catch (error) {
         console.error("getListQuestions", error)
       }
     },
-    [account, id, pin]
+    [address, id, pin]
   )
 
   useEffect(() => {
     const loadBlockchainData = async () => {
-      if (!window || typeof window === "undefined") {
-        return
+      if (!isConnected) {
+        await open()
       }
+      const liveQnA = await ContractHelper.getContract(walletProvider)
 
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      setProvider(provider)
+      liveQnA?.on("QuestionAdded", onChangeData)
+      liveQnA?.on("QuestionVoted", onChangeData)
+      liveQnA?.on("QuestionUnvoted", onChangeData)
 
-      const network = await provider.getNetwork()
-
-      const liveQnAAddress = config[network.chainId].liveQnA.address
-      const liveQnA = new ethers.Contract(liveQnAAddress, LiveQnA, provider)
-
-      setSmartContract(liveQnA)
-
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })
-      const account = ethers.utils.getAddress(accounts[0])
-      setAccount(account)
-
-      const channel = await liveQnA.getChannel(id)
+      const channel = await liveQnA?.getChannel(id)
+      if (!channel) return
       setChannelName(channel.name)
 
-      await getListQuestions(liveQnA, account)
+      await getListQuestions(liveQnA, address)
+    }
 
-      window.ethereum.on("accountsChanged", async () => {
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        })
-        const account = ethers.utils.getAddress(accounts[0])
-        setAccount(account)
-      })
+    async function onChangeData(event) {
+      const liveQnA = await ContractHelper.getContract(walletProvider)
+      await getListQuestions(liveQnA, address)
+      console.debug("Event retrieved: ", event)
     }
 
     loadBlockchainData()
-  }, [
-    id,
-    setProvider,
-    setSmartContract,
-    setAccount,
-    setChannelName,
-    getListQuestions,
-  ])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected])
 
   async function handleAddQuestion(event) {
     event.preventDefault()
-    const signer = provider.getSigner()
+    const liveQnA = await ContractHelper.getContract(walletProvider)
+    const signer = await ContractHelper.getSigner(walletProvider)
     const input = event.target[0].value
     const author = event.target[1].value || "Anonymous"
     try {
       setIsLoading(true)
-      const tx = await smartContract
+      const tx = await liveQnA
         .connect(signer)
         .addQuestionToChannel(id, pin, input, author)
       await tx.wait()
-      await getListQuestions(smartContract)
+      await getListQuestions(liveQnA)
       setInput("")
     } catch (error) {
       console.error("handleAddQuestion", error)
@@ -126,13 +109,14 @@ export default function Channel({ id, pin }) {
   }
 
   async function handleVote(questionId) {
-    const signer = provider.getSigner()
+    const liveQnA = await ContractHelper.getContract(walletProvider)
+    const signer = await ContractHelper.getSigner(walletProvider)
     try {
-      const tx = await smartContract
+      const tx = await liveQnA
         .connect(signer)
         .voteQuestionOfChannel(id, pin, questionId)
       await tx.wait()
-      await getListQuestions(smartContract)
+      await getListQuestions(liveQnA)
     } catch (error) {
       console.error("handleVote", error)
     }
@@ -148,11 +132,13 @@ export default function Channel({ id, pin }) {
     )
   }
 
+  const shouldShowLoading = !questions.length
+
   return (
     <>
-      <LoadingOverlay visible={questions === null} />
       <Box bg={theme.primaryColor} p="lg">
-        <Container p="md">
+        <Container p="md" pos="relative">
+          <ConnectButton color="white" variant="outline" />
           <Title order={3} c="white" mb="lg">
             <Mark bg="teal" px="5">
               {channelName}
@@ -197,38 +183,19 @@ export default function Channel({ id, pin }) {
             const isVoted = question.isVoted
             const isLast = questions[questions.length - 1].id === question.id
             return (
-              <Card
+              <CardQuestion
                 key={index}
-                shadow="md"
-                radius="0"
-                className={isLast && "card-transition"}
-              >
-                <Group>
-                  <Flex direction="column" align="center">
-                    <ActionIcon
-                      variant="subtle"
-                      disabled={isVoted}
-                      className={classes.vote}
-                      onClick={() => handleVote(question.id)}
-                    >
-                      <IconCaretUp
-                        fill={isVoted ? "true" : "none"}
-                        stroke={1.5}
-                      />
-                    </ActionIcon>
-                    <Text fw={500}>{question.votes.toNumber()}</Text>
-                  </Flex>
-                  <Box>
-                    <Text c="gray">{question.author}</Text>
-                    <Text>{question.text}</Text>
-                  </Box>
-                </Group>
-              </Card>
+                isVoted={isVoted}
+                isLast={isLast}
+                question={question}
+                onVote={handleVote}
+              />
             )
           })}
         </Stack>
         <Space ref={targetRef} />
       </Container>
+      <LoadingOverlay visible={shouldShowLoading} />
     </>
   )
 }
