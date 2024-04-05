@@ -129,12 +129,15 @@ export default function Landing() {
             <Text fw="500" mb="xs">
               Create your own Channel
             </Text>
-            <Flex gap="md">
+            <Flex gap="md" wrap="wrap">
               <TextInput
                 placeholder="My Town Hall QnA"
                 radius="md"
-                flex="100%"
+                flex="1"
                 size="lg"
+                style={{
+                  minWidth: "200px",
+                }}
                 onChange={(event) => {
                   setInput(event.target.value)
                 }}
@@ -145,7 +148,10 @@ export default function Landing() {
                 size="lg"
                 px="xs"
                 radius="md"
-                flex="100%"
+                flex="1"
+                style={{
+                  minWidth: "200px",
+                }}
                 type="submit"
                 loading={isLoading}
                 disabled={!input}
